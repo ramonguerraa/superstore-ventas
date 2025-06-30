@@ -19,27 +19,31 @@ try:
 finally:
     conn.close()
 
+# Leer la tabla Calendario ya generada con SQL
 df_calendario = pd.read_sql("SELECT * FROM Calendario", engine)
 
-df_calendario["IDFecha"] = pd.to_numeric(pd.factorize(df_calendario["Fecha"])[0], downcast="integer")
-df_calendario["Fecha"] = pd.to_datetime(df_calendario["Fecha"])
+# ✅ Conversión de tipo de fecha
+df_calendario["Fecha"] = pd.to_datetime(df_calendario["Fecha"]).dt.date
 
-# Forzar tipos para columnas relevantes si las tienes
-df_calendario = df_calendario.astype({
-    "IDFecha": "int32",
-    "Fecha": "datetime64[ns]",
-    # Añade aquí otras columnas con su tipo si ya existen
-})
-
+# Exportar asegurando el tipo correcto
 df_calendario.to_sql(
     "Calendario",
     con=engine,
     if_exists="replace",
     index=False,
     dtype={
-        "IDFecha": sqlalchemy.types.Integer(),
         "Fecha": sqlalchemy.types.Date(),
-        # Asegura agregar aquí todas las demás columnas si existen
+        "dia": sqlalchemy.types.Integer(),
+        "mes": sqlalchemy.types.Integer(),
+        "anio": sqlalchemy.types.Integer(),
+        "dia_semana": sqlalchemy.types.Text(),
+        "dia_semana_corto": sqlalchemy.types.Text(),
+        "num_dia_semana": sqlalchemy.types.Integer(),
+        "semana_anio": sqlalchemy.types.Integer(),
+        "mes_corto": sqlalchemy.types.Text(),
+        "trimestre": sqlalchemy.types.Integer(),
+        "semestre":  sqlalchemy.types.Integer(),
     }
 )
+
 

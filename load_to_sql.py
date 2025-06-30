@@ -11,5 +11,3 @@ engine = create_engine("sqlite:///data/superstore.db")
 df.to_sql("sales", con=engine, if_exists="replace", index=False)
 
 print("✅ superstore.db creado exitosamente en /data")
-
-
