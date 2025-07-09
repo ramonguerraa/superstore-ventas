@@ -86,7 +86,7 @@ df_fact["Order Date"] = pd.to_datetime(df_fact["Order Date"]).dt.date
 
 # Selección final de columnas para la tabla de hechos
 df_fact_ventas = df_fact[[
-    "Order ID", "Order Date", "IDCiudad", "IDRegion", "IDSegmento", "IDShipMode", "IDCategoria",
+    "Order ID", "Order Date", "Customer ID", "IDCiudad", "IDRegion", "IDSegmento", "IDShipMode", "IDCategoria",
     "IDSubcategoria", "IDProducto", "Sales", "Profit", "Quantity", "Discount"
 ]]
 
@@ -139,6 +139,7 @@ with engine_modelado.connect() as conn:
         dtype={
             "Order ID": Text(),
             "Order Date": sqlalchemy.types.Date(),
+            "Customer ID": Text(),
             "IDProducto": Integer(),
             "IDCiudad": Integer(),
             "IDSegmento": Integer(),
