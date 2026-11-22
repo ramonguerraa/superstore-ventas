@@ -1,160 +1,123 @@
-# 🧠 Superstore - Análisis de Ventas
+# Superstore Sales Analysis: Dimensional Model, Data Quality and BI
 
-Este proyecto desarrolla un modelo dimensional sobre el dataset de ventas "Superstore", utilizando `SQLite` como base de datos y `Power BI` para la visualización interactiva de reportes de negocio.
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Power BI](https://img.shields.io/badge/Power_BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)
+![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-## 📂 Estructura del Proyecto
+An end-to-end sales analysis on the Superstore dataset: raw-data cleaning, a
+star-schema model in SQLite, and a Power BI report for sales, customer and
+product performance.
 
-```bash
-superstore_ventas/
-│
+**Stack:** Python (pandas, matplotlib, seaborn) · SQL (SQLite) · Power BI · Dimensional modeling
+
+---
+
+## Business questions
+
+- Which regions, products and customers drive revenue and profit?
+- How do sales and profit evolve over time?
+- Where is margin weak, and which sub-categories need attention?
+
+## Key figures (after cleaning, 2015–2018)
+
+| Metric | Value |
+|---|---|
+| Sales records | 9,994 |
+| Distinct orders | 5,009 |
+| Total sales | USD 2,297,201 |
+| Total profit | USD 286,397 |
+| Profit margin (profit / sales) | 12.5% |
+
+Sales by region: West USD 725k · East USD 679k · Central USD 501k · South USD 392k.
+
+## Data quality: issues found and fixed
+
+Working from the raw file exposed three problems that would have overstated results.
+
+1. **806 corrupted rows at the end of the CSV.** The file held two auxiliary tables
+   (people by region, and returned orders) appended after the sales records, with
+   no matching columns. They were read as sales with empty keys.
+   *Fix:* `scripts/00_limpieza.py` separates the sales records (9,994) from the auxiliary
+   tables, which are saved under `data/aux/`. The original file is kept unchanged in `data/raw/`.
+
+2. **Fan-out in the dimensional model.** `DimCiudad` was joined to the fact table on city
+   name only, and 57 city names occur in more than one state. Each match duplicated fact rows.
+   *Fix:* the join now uses `(City, State)`, and the loader asserts that
+   `FactVentas` has exactly one row per sales record.
+
+3. **Inflated totals as a result.** The previous model had 14,178 fact rows against 9,994
+   source records, and total sales of USD 3,144,936 instead of USD 2,297,201 (about 37% higher).
+
+## Project structure
+
+```
+superstore-ventas/
 ├── data/
-│   ├── superstore.csv
-│   ├── superstore.db
-│   ├── superstore_modelado.db
-│
+│   ├── raw/superstore_original.csv   # untouched source file
+│   ├── aux/                          # auxiliary tables separated during cleaning
+│   ├── superstore.csv                # cleaned sales records
+│   ├── superstore.db                 # SQLite: table `sales`
+│   └── superstore_modelado.db        # SQLite: star schema
 ├── scripts/
-│   ├── load_data_modelado.py
-│   ├── init_modelo.py
-│
-├── visualizaciones/
-│   └── Superstore_Reportes.pbix
-│
-├── schema.sql
-├── requirements.txt
-├── README.md
+│   ├── 00_limpieza.py                # step 0: cleaning and validation
+│   ├── load_to_sql.py                # step 1: load to SQLite
+│   ├── init_modelo.py                # step 2: calendar dimension (schema.sql)
+│   ├── load_data_modelado.py         # step 3: build dimensions and fact table
+│   ├── query_sales.py                # run the analytical queries
+│   ├── queries.sql
+│   ├── analyze_sales.py              # exploratory charts
+│   └── analisis_inicial.py           # initial profiling
+├── schema.sql                        # Calendario DDL
+├── pbix/Superstore_Reportes.pbix     # Power BI report
+└── plots/, images/                   # exported charts and screenshots
 ```
 
-## 🔍 Descripción General
+## Dimensional model (star schema)
 
-Este proyecto tiene como objetivo modelar, analizar y visualizar las ventas realizadas por la tienda Superstore. A partir del archivo original `superstore.csv`, se construye una base de datos con un modelo estrella, y se genera un dashboard profesional en `Power BI`.
+**Fact table:** `FactVentas` (one row per sales record): order, customer, city, region,
+segment, ship mode, category, sub-category, product, sales, profit, quantity, discount.
 
-## 📊 Modelo Dimensional
+**Dimensions:** `DimCiudad`, `DimEstado`, `DimRegion`, `DimSegmento`, `DimShipMode`,
+`DimCategoria`, `DimSubcategoria`, `DimProducto`, `Calendario`.
 
-### Tabla de hechos: `FactVentas`
+## How to run
 
-### Dimensiones:
-
-* `DimProducto`
-
-* `DimSubcategoria`
-
-* `DimCategoria`
-
-* `DimCiudad`
-
-* `DimEstado`
-
-* `DimPais`
-
-* `DimSegmento`
-
-* `DimShipMode`
-
-* `Calendario`
-
-El modelo fue construido mediante scripts en `Python` usando `pandas` y `sqlalchemy`, y cargado en `superstore_modelado.db`.
-
-## 🔄 Flujo del Proyecto
-
-* `init_modelo.py`
-
-* Crea la tabla `Calendario` con atributos de fecha enriquecidos.
-
-* `load_data_modelado.py`
-
-* Lee `superstore.db`
-
-* Construye las tablas dimensionales
-
-* Genera la tabla `FactVentas`
-
-* Exporta el modelo a `SQLite`
-
-* `Superstore_Reportes.pbix`
-
-* Visualizaciones profesionales con segmentadores de tiempo
-
-* Navegación por botones y KPIs
-
-## 🌐 Visualización en Power BI
-
-* Portada con identidad visual
-
-* Dashboard de Ventas por producto, ciudad y tiempo
-
-* Dashboard de Clientes por segmento, ticket promedio, frecuencia
-
-* Dashboard de Categorías por subcategoría, rentabilidad, descuentos
-
-* Incluye medidas calculadas en una tabla separada, segmentadores de fecha y filtros.
-
-## 🖼️ Visualizaciones en Python
-
-### 👥 Top 10 Clientes
-![Top 10 Clientes](plots/top_clientes.png)
-
-### 🖥️ Top 10 Productos
-![Top 10 Productos](plots/top_productos.png)
-
-### 🗺️ Ventas Anuales por Region
-![Ventas Anuales por Region](plots/ventas_region_anual.png)
-
-## 📚 Requisitos
-
-`Python 3.10`+
-
-`Power BI Desktop`
-
-`SQLite3` o `DB Browser for SQLite` (opcional)
-
-### Bibliotecas Python:
-
-`pandas`
-
-`sqlalchemy`
-
-### Instalación:
+Run every command from the repository root.
 
 ```bash
 pip install -r requirements.txt
+
+python scripts/00_limpieza.py          # clean the raw file
+python scripts/load_to_sql.py          # create data/superstore.db
+python scripts/init_modelo.py          # create the calendar dimension
+python scripts/load_data_modelado.py   # build the star schema
+python scripts/query_sales.py          # run the analytical queries
 ```
 
-## 🚀 Ejecución Paso a Paso
+## Power BI report
 
-### Paso 1: Ejecutar script de creación del calendario
-`python scripts/init_modelo.py`
+`pbix/Superstore_Reportes.pbix` contains the sales, customer, product and category
+dashboards, built on a star schema with active one-to-many relationships from each
+dimension to `FactVentas`. To reproduce it, point the ODBC data source at
+`data/superstore_modelado.db` and refresh.
 
-### Paso 2: Crear el modelo dimensional completo
-`python scripts/load_data_modelado.py`
+## Metric definitions
 
-### Paso 3: Abrir archivo PBIX para visualizar
-`start visualizaciones/Superstore_Reportes.pbix`
+- **Sales:** revenue of the line item, as recorded in the source.
+- **Profit:** profit of the line item, as recorded in the source.
+- **Profit margin:** `Profit / Sales`, aggregated as a ratio of sums, not an average of ratios.
 
-## 📷 Capturas de pantalla
+## Limitations
 
-### 📌 Portada
-![Portada del Reporte](images/visualizaciones/Vis_Portada.png)
+- The source covers 2015–2018 only; no forecasting is attempted.
+- Customer and product names are taken as given; no entity resolution was performed.
 
-### 📊 Dashboard de Ventas
-![Dashboard de Ventas](images/visualizaciones/Vis_Reporte_Ventas.png)
+## License
 
-### 👥 Dashboard de Clientes
-![Dashboard de Clientes](images/visualizaciones/Vis_Reporte_Clientes.png)
+Released under the [MIT License](LICENSE).
 
-### 🧱 Dashboard de Productos
-![Dashboard de Categorías](images/visualizaciones/Vis_Reporte_Productos.png)
+## Author
 
-## 👤 Autor
-
-### Ramon G.
-Analista de Datos | Modelado Dimensional | Visual Analytics
-
-## 🌍 Licencia
-
-Uso educativo y profesional. Puedes adaptar y reutilizar este proyecto con fines de aprendizaje y mejora continua.
-
-
-
-## 📬 Contacto
-### ¿Tienes feedback o preguntas?
-### Escríbeme por GitHub o conecta en LinkedIn.
+**Ramón Guerra** · Quantitative analyst · SQL · Python · Power BI

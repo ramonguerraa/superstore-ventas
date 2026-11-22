@@ -1,13 +1,19 @@
+"""
+Paso 1 · Carga de la data limpia a SQLite (tabla `sales`).
+
+Entrada : data/superstore.csv
+Salida  : data/superstore.db  (tabla `sales`)
+
+Uso (desde la raíz del repositorio):
+    python scripts/load_to_sql.py
+"""
+import sqlite3
 import pandas as pd
-from sqlalchemy import create_engine
 
-# Cargar los datos
-df = pd.read_csv("data/superstore.csv", parse_dates=["Order Date", "Ship Date"])
+df = pd.read_csv("data/superstore.csv", encoding="ISO-8859-1", parse_dates=["Order Date", "Ship Date"])
+df.columns = df.columns.str.strip()
 
-# Crear motor SQLite
-engine = create_engine("sqlite:///data/superstore.db")
+with sqlite3.connect("data/superstore.db") as conn:
+    df.to_sql("sales", con=conn, if_exists="replace", index=False)
 
-# Exportar DataFrame a SQL
-df.to_sql("sales", con=engine, if_exists="replace", index=False)
-
-print("✅ superstore.db creado exitosamente en /data")
+print(f"✅ data/superstore.db creada con {len(df):,} registros en la tabla `sales`.")

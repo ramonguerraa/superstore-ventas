@@ -1,7 +1,9 @@
+# Virtual environments and caches
 venv/
+.venv/
 __pycache__/
-*.db
 *.pyc
-*.pbi*
-plots/
+
+# Local secrets and OS files
+.env
 .DS_Store
